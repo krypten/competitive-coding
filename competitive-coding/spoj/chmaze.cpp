@@ -48,123 +48,91 @@ void input() {
 #endif
 }
 // Logic
-#define SIZE 4
+#define SIZE 5
 
-int moves[SIZE][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-char matrix[32][32];
-bool visited[32][32];
+int moves[SIZE][2] = {{0, 0}, {0, 1}, {-1, 0}, {1, 0}, {0, 1}};
+bool matrix[32][32][32];
+bool visited[32][32][32];
 
 typedef struct {
 	int x;
 	int y;
+	int p; 		// pattern no.
+	int depth;
 } node;
 
-int n, m;
+int n, m, p;
 
-bool legalMove(int x, int y)
+bool legalMove(int x, int y, int p)
 {
-	if (x >= 0 && x < n && y >= 0 && y < m) {
+	if (x >= 0 && x < n && y >= 0 && y < m && matrix[x][y][p]) {
 		return true;
 	}
 	return false;
 }
 
-bool bfs(node s, node d)
+int bfs(int sx, int sy, int dx, int dy)
 {
 	node v;
 	queue<node> q;
 	M(visited, false);
-	q.push(s);
+	v.x = sx;
+	v.y = sy; v.depth = 0; v.p = 0;
+	q.push(v);
 	while (!q.empty()) {
+		//cout << "Entering \n";
 		node u = q.front(); q.pop();
-		//cout << u.x << " " << u.y << " " << u.cost << "\n";
-		if (u.x == d.x && u.y == d.y) {
-			return true;
+		//cout << u.x << " " << u.y << " " << u.p << " " << u.depth << " " ;//<< matrix[u.x][u.y][u.p] << "\n";
+
+		if (u.x == dx && u.y == dy) {
+			return u.depth;
 		}
-		if (visited[u.x][u.y])
+		if (visited[u.x][u.y][u.p]) // equal # of mirrors with different incoming dir, got a WA for missing this
 			continue;
-		visited[u.x][u.y] = true;
+		visited[u.x][u.y][u.p] = true;
 
 		//cout << u.x << " " << u.y << " " << u.cost << "\n";
 		F(i,0,SIZE) {
 			int X = u.x + moves[i][0];
 			int Y = u.y + moves[i][1];
-
-			if (legalMove(X, Y) && !visited[X][Y] && matrix[X][Y] == '.') {
-				v.x = X; v.y = Y;
+			int P = (u.p + 1) % p;
+				if (legalMove(X, Y, P)) { 
+				v.x = X; v.y = Y; v.depth = u.depth + 1; v.p = P;
 				//cout << "Pushing : " << v.x << " " << v.y << " " << v.cost << "\n";
 				q.push(v);
 			}
 		}
-		//cout << u.x << " " << u.y << " " << u.cost << " " << pq.size() << "\n";
+		//cout << u.x << " " << u.y << " " << u.p <<  " " << u.depth << "\n";
 	}
-	return false;
+	return -1;
 }
 
 int main()
 {
 	input();
 	int t;
-	node arr[2];
-	S(t);
-	//t = 1;
-	while (t--) {
-		S(n), S(m);
+	char temp;
+	//S(t);
+	t = 0;
+	while (++t) {
+		S(n), S(m), S(p);//, scanf(" %*c");
+		if (n == 0 && m == 0 && p == 0)
+			break;
+		F(k,0, p)
 		F(i, 0, n)
 			F(j , 0, m) {
-				scanf(" %c", &matrix[i][j]);
+				cin >> temp;
+				matrix[i][j][k] = (temp=='0'?true: false);
 			}
-		int cnt = 0;
-		bool flag = true;
 
-		//cout<< n << " " << m << "\n";
-		if (n == 1 && m == 1)
-			flag = false;
-		else if (n > 1 || m > 1) {
-			F(i,0,n) {
-				//cout << cnt << " " << matrix[i][m-1] << "\n\t";
-				if (matrix[i][0] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= i;
-						arr[cnt].y= 0;
-					}
-					++cnt;
-				}
-				if (m-1 > 0 && matrix[i][m-1] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= i;
-						arr[cnt].y=m-1;
-					}
-					++cnt;
-				}
-			}
-			F(j,1,m-1) {
-				if (matrix[0][j] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= 0;
-						arr[cnt].y= j;
-					}
-					++cnt;
-				}
-				if (n-1 > 0 && matrix[n-1][j] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= n-1;
-						arr[cnt].y= j;
-					}
-					++cnt;
-				}
-			}
-			//cout << "count : " << cnt << "\n";
-			if (cnt != 2)
-				flag = false;
-			else if (flag) {
-				flag = bfs(arr[0], arr[1]);
-			}
+		int ans = bfs(0,0, n-1,m-1);
+		printf("Case %d: Luke and Leia can", t);
+		if (ans == -1)
+			Ps("not escape.\n");
+		else {
+			Ps(" escape in "), P(ans), Ps(" steps.\n");
 		}
-		if (flag)
-			Ps("valid\n");
-		else
-			Ps("invalid\n");
+
 	}
 	return 0;
 }

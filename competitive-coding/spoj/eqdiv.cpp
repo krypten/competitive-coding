@@ -51,120 +51,96 @@ void input() {
 #define SIZE 4
 
 int moves[SIZE][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-char matrix[32][32];
-bool visited[32][32];
+int matrix[128][128];
+bool visited[128][128];
 
 typedef struct {
 	int x;
 	int y;
+	int val;
 } node;
 
-int n, m;
-
-bool legalMove(int x, int y)
+bool legalMove(int x, int y, int n)
 {
-	if (x >= 0 && x < n && y >= 0 && y < m) {
+	if (x >= 0 && x < n && y >= 0 && y < n) {
 		return true;
 	}
 	return false;
 }
 
-bool bfs(node s, node d)
+int bfs(int sX, int sY, int n)
 {
+	int ans = 0;
+	int dest = matrix[sX][sY];
+	
 	node v;
+	v.x=sX; v.y = sY; v.val = matrix[sX][sY];
+	
 	queue<node> q;
-	M(visited, false);
-	q.push(s);
+	q.push(v);
 	while (!q.empty()) {
 		node u = q.front(); q.pop();
 		//cout << u.x << " " << u.y << " " << u.cost << "\n";
-		if (u.x == d.x && u.y == d.y) {
-			return true;
+		if (u.val != dest) {
+			continue;
 		}
 		if (visited[u.x][u.y])
 			continue;
 		visited[u.x][u.y] = true;
-
+		++ans;
 		//cout << u.x << " " << u.y << " " << u.cost << "\n";
 		F(i,0,SIZE) {
 			int X = u.x + moves[i][0];
 			int Y = u.y + moves[i][1];
-
-			if (legalMove(X, Y) && !visited[X][Y] && matrix[X][Y] == '.') {
-				v.x = X; v.y = Y;
+			int V = matrix[X][Y];
+			if (legalMove(X, Y, n) && !visited[X][Y] && V == dest) {
+				node v; v.x = X; v.y = Y; v.val = V;
 				//cout << "Pushing : " << v.x << " " << v.y << " " << v.cost << "\n";
 				q.push(v);
 			}
 		}
 		//cout << u.x << " " << u.y << " " << u.cost << " " << pq.size() << "\n";
 	}
-	return false;
+	return ans;
 }
 
 int main()
 {
 	input();
-	int t;
-	node arr[2];
-	S(t);
+	int n;
+	int u, v;
+	//S(t);
 	//t = 1;
-	while (t--) {
-		S(n), S(m);
-		F(i, 0, n)
-			F(j , 0, m) {
-				scanf(" %c", &matrix[i][j]);
+	while (scanf("%d", &n) != EOF && n) {
+		M(matrix,n);
+		F(i, 1, n) {
+			F(j , 0, n) {
+				S(u),S(v);
+				matrix[u-1][v-1] = i;
+				if(n == j+1)
+					while(getchar()!='\n');; 
 			}
-		int cnt = 0;
-		bool flag = true;
 
-		//cout<< n << " " << m << "\n";
-		if (n == 1 && m == 1)
-			flag = false;
-		else if (n > 1 || m > 1) {
-			F(i,0,n) {
-				//cout << cnt << " " << matrix[i][m-1] << "\n\t";
-				if (matrix[i][0] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= i;
-						arr[cnt].y= 0;
+		}
+
+		int cnt;
+		bool flag = true;
+		M(visited, false);	
+		for (int i = 0; i < n && flag ; ++i) {
+			F(j, 0, n) {
+				if (!visited[i][j]) {
+					cnt = bfs(i,j,n);
+					if (cnt != n) {
+						flag = false;
+						break;
 					}
-					++cnt;
 				}
-				if (m-1 > 0 && matrix[i][m-1] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= i;
-						arr[cnt].y=m-1;
-					}
-					++cnt;
-				}
-			}
-			F(j,1,m-1) {
-				if (matrix[0][j] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= 0;
-						arr[cnt].y= j;
-					}
-					++cnt;
-				}
-				if (n-1 > 0 && matrix[n-1][j] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= n-1;
-						arr[cnt].y= j;
-					}
-					++cnt;
-				}
-			}
-			//cout << "count : " << cnt << "\n";
-			if (cnt != 2)
-				flag = false;
-			else if (flag) {
-				flag = bfs(arr[0], arr[1]);
 			}
 		}
 		if (flag)
-			Ps("valid\n");
+			Ps("good\n");
 		else
-			Ps("invalid\n");
+			Ps("wrong\n");
 	}
 	return 0;
 }

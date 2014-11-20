@@ -50,55 +50,81 @@ void input() {
 // Logic
 #define SIZE 4
 
-int moves[SIZE][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-char matrix[32][32];
-bool visited[32][32];
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
+
+int moves[SIZE][2] = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
+char matrix[128][128];
+int visited[128][128];
 
 typedef struct {
 	int x;
 	int y;
+	int dir;
+	int mirror;
 } node;
 
 int n, m;
 
 bool legalMove(int x, int y)
 {
-	if (x >= 0 && x < n && y >= 0 && y < m) {
+	if (x >= 0 && x < n && y >= 0 && y < m && matrix[x][y] != '*') {
 		return true;
 	}
 	return false;
 }
 
-bool bfs(node s, node d)
+int isSamePath(int i, int j)
+{
+	if (i == j)
+		return 0;
+	return 1;
+}
+
+struct comparator {
+	bool operator()(const node& a, const node&b) {
+		return a.mirror > b.mirror;
+	}	
+};
+int bfs(node s, node d)
 {
 	node v;
 	queue<node> q;
-	M(visited, false);
+	//priority_queue<node, V(node), comparator> q;
+	M(visited, 0x333333);
+	s.mirror = 0;
+	s.dir = -1;
+	d.mirror = 0x333332;
 	q.push(s);
 	while (!q.empty()) {
 		node u = q.front(); q.pop();
-		//cout << u.x << " " << u.y << " " << u.cost << "\n";
+		//cout << u.x << " " << u.y << " " << u.dir << " " << u.mirror << " " << matrix[u.x][u.y] << "\n";
 		if (u.x == d.x && u.y == d.y) {
-			return true;
-		}
-		if (visited[u.x][u.y])
+			(d.mirror = min(d.mirror, u.mirror));
 			continue;
-		visited[u.x][u.y] = true;
+		}
+		if (u.mirror > visited[u.x][u.y]) // equal # of mirrors with different incoming dir, got a WA for missing this
+			continue;
+		else
+			visited[u.x][u.y] = u.mirror;
 
 		//cout << u.x << " " << u.y << " " << u.cost << "\n";
 		F(i,0,SIZE) {
 			int X = u.x + moves[i][0];
 			int Y = u.y + moves[i][1];
 
-			if (legalMove(X, Y) && !visited[X][Y] && matrix[X][Y] == '.') {
-				v.x = X; v.y = Y;
+			if (legalMove(X, Y)) {
+				v.x = X; v.y = Y; v.mirror = u.mirror + isSamePath(u.dir, i);
 				//cout << "Pushing : " << v.x << " " << v.y << " " << v.cost << "\n";
+				v.dir = i;
 				q.push(v);
 			}
 		}
 		//cout << u.x << " " << u.y << " " << u.cost << " " << pq.size() << "\n";
 	}
-	return false;
+	return (d.mirror != 0x333332)?d.mirror:0;
 }
 
 int main()
@@ -106,65 +132,21 @@ int main()
 	input();
 	int t;
 	node arr[2];
-	S(t);
-	//t = 1;
+	//S(t);
+	t = 1;
 	while (t--) {
-		S(n), S(m);
+		S(m), S(n);
+		int cnt = 0;
 		F(i, 0, n)
 			F(j , 0, m) {
 				scanf(" %c", &matrix[i][j]);
+				if (matrix[i][j] == 'C') {
+					arr[cnt].x = i, arr[cnt].y = j; ++cnt;
+				}
 			}
-		int cnt = 0;
-		bool flag = true;
 
-		//cout<< n << " " << m << "\n";
-		if (n == 1 && m == 1)
-			flag = false;
-		else if (n > 1 || m > 1) {
-			F(i,0,n) {
-				//cout << cnt << " " << matrix[i][m-1] << "\n\t";
-				if (matrix[i][0] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= i;
-						arr[cnt].y= 0;
-					}
-					++cnt;
-				}
-				if (m-1 > 0 && matrix[i][m-1] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= i;
-						arr[cnt].y=m-1;
-					}
-					++cnt;
-				}
-			}
-			F(j,1,m-1) {
-				if (matrix[0][j] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= 0;
-						arr[cnt].y= j;
-					}
-					++cnt;
-				}
-				if (n-1 > 0 && matrix[n-1][j] == '.') {
-					if (cnt < 2) {
-						arr[cnt].x= n-1;
-						arr[cnt].y= j;
-					}
-					++cnt;
-				}
-			}
-			//cout << "count : " << cnt << "\n";
-			if (cnt != 2)
-				flag = false;
-			else if (flag) {
-				flag = bfs(arr[0], arr[1]);
-			}
-		}
-		if (flag)
-			Ps("valid\n");
-		else
-			Ps("invalid\n");
+		P(bfs(arr[0], arr[1]) - 1), Ps("\n");
+
 	}
 	return 0;
 }
